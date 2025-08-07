@@ -1,0 +1,93 @@
+name: Release Packager for Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows-legacy:
+    name: Build for Windows 7 (Python 3.8)
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller --name TokenGuardian-Win7-py3.8 `
+            --onefile `
+            --windowed `
+            --icon="token_guardian/icon.ico" `
+            --add-data="assets;assets" `
+            token_guardian/main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TokenGuardian-Win7-py3.8
+          path: dist/TokenGuardian-Win7-py3.8.exe
+
+  build-windows-modern:
+    name: Build for Windows 10/11 (Python 3.11)
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller --name TokenGuardian-Win10-py3.11 `
+            --onefile `
+            --windowed `
+            --icon="token_guardian/icon.ico" `
+            --add-data="assets;assets" `
+            token_guardian/main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TokenGuardian-Win10-py3.11
+          path: dist/TokenGuardian-Win10-py3.11.exe
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-windows-legacy, build-windows-modern]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Create Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*/*.exe

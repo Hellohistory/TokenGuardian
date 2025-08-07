@@ -1,3 +1,4 @@
+# token_guardian/gui/main_window.py
 import time
 from functools import partial
 
